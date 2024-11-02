@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Take Home</string>
+    <string name="user_id_input_placeholder">Enter a github user id</string>
+    <string name="search_button_text">Search</string>
+</resources>
