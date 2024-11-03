@@ -2,4 +2,5 @@
     <string name="app_name">Take Home</string>
     <string name="user_id_input_placeholder">Enter a github user id</string>
     <string name="search_button_text">Search</string>
+    <string name="error_msg_no_user_found">No user found</string>
 </resources>

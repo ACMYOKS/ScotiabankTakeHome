@@ -26,7 +26,8 @@
             android:id="@+id/et_userId"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/user_id_input_placeholder" />
+            android:hint="@string/user_id_input_placeholder"
+            android:imeOptions="actionSearch" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <Button
@@ -66,6 +67,7 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_repos"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
