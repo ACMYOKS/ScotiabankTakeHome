@@ -17,6 +17,7 @@ import com.acapp1412.scotiabanktakehome.data.Repo
 import com.acapp1412.scotiabanktakehome.data.User
 import com.acapp1412.scotiabanktakehome.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.filterNotNull
+import kotlin.time.Duration.Companion.seconds
 
 class MainActivity : AppCompatActivity() {
     private val viewModel by viewModels<MainPageViewModel> { MainPageViewModel.Factory }
@@ -40,6 +41,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupUi() {
         binding.apply {
             btnSearch.setOnClickListener {
+                currentFocus?.hideKeyboard()
                 viewModel.searchUser(etUserId.text?.toString().orEmpty())
             }
             rvRepos.apply {
@@ -82,6 +84,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun showUserAvatar(user: User) {
+        binding.containerUserInfo.fadeIn(0.6.seconds)
         val request = ImageRequest.Builder(this)
             .data(user.avatarUrl)
             .crossfade(true)
@@ -92,6 +95,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showRepos(repos: List<Repo>) {
+        binding.rvRepos.fadeIn(0.6.seconds)
         repoAdapter.submitList(repos)
     }
 }
