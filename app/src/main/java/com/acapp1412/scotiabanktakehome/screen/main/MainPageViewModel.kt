@@ -1,4 +1,4 @@
-package com.acapp1412.scotiabanktakehome
+package com.acapp1412.scotiabanktakehome.screen.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -6,8 +6,13 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.acapp1412.scotiabanktakehome.BaseApplication
+import com.acapp1412.scotiabanktakehome.GithubService
+import com.acapp1412.scotiabanktakehome.Message
+import com.acapp1412.scotiabanktakehome.R
 import com.acapp1412.scotiabanktakehome.data.Repo
 import com.acapp1412.scotiabanktakehome.data.User
+import com.acapp1412.scotiabanktakehome.screen.detail.RepoDisplayDetail
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +30,10 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
     private val _error = MutableSharedFlow<Message>(0, 1, BufferOverflow.DROP_OLDEST)
     val error = _error.asSharedFlow()
 
+    private val _navToDetailEvent =
+        MutableSharedFlow<RepoDisplayDetail>(0, 1, BufferOverflow.DROP_OLDEST)
+    val navToDetailEvent = _navToDetailEvent.asSharedFlow()
+
     fun searchUser(userId: String) {
         viewModelScope.launch {
             try {
@@ -34,11 +43,13 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
                         _searchResultState.value = SearchResultState.UserFound(response.body()!!)
                         getRepos(userId)
                     }
+
                     response.code() == 404 -> {
                         _searchResultState.value = SearchResultState.NoUserFound
                         _error.tryEmit(Message.OfResource(R.string.error_msg_no_user_found))
                         _repos.value = emptyList()
                     }
+
                     else -> {
                         _error.tryEmit(Message.OfString(response.message()))
                     }
@@ -71,6 +82,25 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
             } catch (e: Exception) {
                 e.printStackTrace()
                 _error.tryEmit(Message.OfString(e.message.orEmpty()))
+            }
+        }
+    }
+
+    fun showRepo(repoId: Long) {
+        if (_searchResultState.value is SearchResultState.UserFound) {
+            when (val searchResultState = _searchResultState.value) {
+                is SearchResultState.UserFound -> {
+                    _repos.value.firstOrNull { it.id == repoId }?.let {
+                        _navToDetailEvent.tryEmit(
+                            RepoDisplayDetail(
+                                searchResultState.user.name,
+                                it
+                            )
+                        )
+                    }
+                }
+
+                else -> {}
             }
         }
     }

@@ -1,5 +1,6 @@
-package com.acapp1412.scotiabanktakehome
+package com.acapp1412.scotiabanktakehome.screen.main
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -12,17 +13,25 @@ import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import coil3.request.target
-import com.acapp1412.scotiabanktakehome.MainPageViewModel.*
+import com.acapp1412.scotiabanktakehome.R
+import com.acapp1412.scotiabanktakehome.SpacingItemDecoration
+import com.acapp1412.scotiabanktakehome.collectRepeatedly
 import com.acapp1412.scotiabanktakehome.data.Repo
 import com.acapp1412.scotiabanktakehome.data.User
 import com.acapp1412.scotiabanktakehome.databinding.ActivityMainBinding
-import kotlinx.coroutines.flow.filterNotNull
-import kotlin.time.Duration.Companion.seconds
+import com.acapp1412.scotiabanktakehome.dpToPx
+import com.acapp1412.scotiabanktakehome.fadeIn
+import com.acapp1412.scotiabanktakehome.hideKeyboard
+import com.acapp1412.scotiabanktakehome.screen.detail.DetailActivity
+import com.acapp1412.scotiabanktakehome.screen.detail.DetailViewModel
+import com.acapp1412.scotiabanktakehome.screen.main.MainPageViewModel.SearchResultState
 
 class MainActivity : AppCompatActivity() {
     private val viewModel by viewModels<MainPageViewModel> { MainPageViewModel.Factory }
     private lateinit var binding: ActivityMainBinding
-    private val repoAdapter = RepoAdapter()
+    private val repoAdapter = RepoAdapter {
+        viewModel.showRepo(it.id)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,7 +60,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        viewModel.searchResultState.collectRepeatedly(this, Lifecycle.State.STARTED) {
+        viewModel.searchResultState.collectRepeatedly(this, Lifecycle.State.CREATED) {
             when (it) {
                 SearchResultState.Init -> {
                     emptyUserAvatar()
@@ -67,12 +76,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        viewModel.repos.collectRepeatedly(this, Lifecycle.State.STARTED) {
+        viewModel.repos.collectRepeatedly(this, Lifecycle.State.CREATED) {
             showRepos(it)
         }
 
-        viewModel.error.collectRepeatedly(this, Lifecycle.State.STARTED) {
+        viewModel.error.collectRepeatedly(this, Lifecycle.State.CREATED) {
             Toast.makeText(this, it.toString(this), Toast.LENGTH_SHORT).show()
+        }
+
+        viewModel.navToDetailEvent.collectRepeatedly(this, Lifecycle.State.CREATED) {
+            startActivity(
+                Intent(
+                    this,
+                    DetailActivity::class.java
+                ).putExtra(DetailViewModel.KeyRepoDetail, it)
+            )
         }
     }
 
@@ -84,7 +102,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun showUserAvatar(user: User) {
-        binding.containerUserInfo.fadeIn(0.6.seconds)
+        binding.containerUserInfo.fadeIn()
         val request = ImageRequest.Builder(this)
             .data(user.avatarUrl)
             .crossfade(true)
@@ -95,7 +113,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showRepos(repos: List<Repo>) {
-        binding.rvRepos.fadeIn(0.6.seconds)
+        binding.rvRepos.fadeIn()
         repoAdapter.submitList(repos)
     }
 }
