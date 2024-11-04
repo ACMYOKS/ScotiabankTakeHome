@@ -1,5 +1,6 @@
 package com.acapp1412.scotiabanktakehome.screen.main
 
+import androidx.annotation.VisibleForTesting
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -61,7 +62,8 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
         }
     }
 
-    private fun getRepos(userId: String) {
+    @VisibleForTesting
+    fun getRepos(userId: String) {
         viewModelScope.launch {
             try {
                 val response = githubService.getUserRepos(userId)
@@ -87,21 +89,19 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
     }
 
     fun showRepo(repoId: Long) {
-        if (_searchResultState.value is SearchResultState.UserFound) {
-            when (val searchResultState = _searchResultState.value) {
-                is SearchResultState.UserFound -> {
-                    _repos.value.firstOrNull { it.id == repoId }?.let {
-                        _navToDetailEvent.tryEmit(
-                            RepoDisplayDetail(
-                                searchResultState.user.name,
-                                it
-                            )
+        when (val searchResultState = searchResultState.value) {
+            is SearchResultState.UserFound -> {
+                repos.value.firstOrNull { it.id == repoId }?.let {
+                    _navToDetailEvent.tryEmit(
+                        RepoDisplayDetail(
+                            searchResultState.user.name,
+                            it
                         )
-                    }
+                    )
                 }
-
-                else -> {}
             }
+
+            else -> {}
         }
     }
 
