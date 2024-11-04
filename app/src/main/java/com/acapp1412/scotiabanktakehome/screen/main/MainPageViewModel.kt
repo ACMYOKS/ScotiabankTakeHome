@@ -94,7 +94,7 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
                 repos.value.firstOrNull { it.id == repoId }?.let {
                     _navToDetailEvent.tryEmit(
                         RepoDisplayDetail(
-                            searchResultState.user.name,
+                            searchResultState.user.login,
                             it
                         )
                     )

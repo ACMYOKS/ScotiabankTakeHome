@@ -44,7 +44,7 @@ class DetailActivity : AppCompatActivity() {
     }
 
     private fun showRepoDetail(detail: RepoDisplayDetail) {
-        setTitle(detail.userName, detail.repo.name)
+        setTitle(detail.userId, detail.repo.name)
         setForkCard(detail.repo.forks)
         setStarCard(detail.repo.stargazersCount)
         setUpdateAt(detail.repo.updatedAt)

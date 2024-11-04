@@ -74,9 +74,9 @@ class MainPageViewModelTest {
     @Test
     fun `when searchUser is called and GithubService getUser returns with code 200, searchResultState returns UserFound with corresponding User value`() =
         runTest {
-            val user1 = User(1, "user1", "url1", 10)
+            val user1 = User(1, "user1", "user1", "url1", 10)
             val response1 = Response.success(200, user1)
-            val user2 = User(2, "user2", "url2", 2)
+            val user2 = User(2, "user2", "user2", "url2", 2)
             val response2 = Response.success(200, user2)
             coEvery { mockGithubSvc.getUser("user1") } returns response1
             coEvery { mockGithubSvc.getUser("user2") } returns response2
@@ -95,7 +95,7 @@ class MainPageViewModelTest {
     @Test
     fun `when searchUser is called and GithubService getUser returns with code 404, searchResultState returns NoUserFound`() =
         runTest {
-            val user1 = User(1, "user1", "url1", 10)
+            val user1 = User(1, "user1", "user1", "url1", 10)
             val response1 = Response.success(200, user1)
             val response2 = Response.error<User>(404, "no user found".toResponseBody())
             coEvery { mockGithubSvc.getUser("user1") } returns response1
@@ -116,7 +116,7 @@ class MainPageViewModelTest {
     fun `when GithubService getUser returns 404 or throw exception, error emits a Message`() =
         runTest {
             turbineScope {
-                val user1 = User(1, "user1", "url1", 10)
+                val user1 = User(1, "user1", "user1", "url1", 10)
                 val response1 = Response.success(200, user1)
                 coEvery { mockGithubSvc.getUser("user1") } returns response1
                 coEvery { mockGithubSvc.getUser("") } returns Response.error(
@@ -149,9 +149,9 @@ class MainPageViewModelTest {
     @Test
     fun `when searchUser is called with userId and GithubService returns a user, getRepos is called with that userId`() =
         runTest {
-            val user1 = User(1, "user1", "url1", 10)
+            val user1 = User(1, "user1", "user1", "url1", 10)
             val response1 = Response.success(200, user1)
-            val user2 = User(2, "user2", "url2", 2)
+            val user2 = User(2, "user2", "user2", "url2", 2)
             val response2 = Response.success(200, user2)
             val response3 = Response.error<User>(404, "no user found".toResponseBody())
 

@@ -6,6 +6,6 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class RepoDisplayDetail(
-    val userName: String,
+    val userId: String,
     val repo: Repo
 ) : Parcelable
