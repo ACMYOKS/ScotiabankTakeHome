@@ -101,14 +101,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun showUserAvatar(user: User) {
+    private fun showUserAvatar(user: User) {
         binding.containerUserInfo.fadeIn()
         val request = ImageRequest.Builder(this)
             .data(user.avatarUrl)
             .crossfade(true)
             .target(binding.ivUser)
             .build()
-        imageLoader.execute(request)
+        imageLoader.enqueue(request)
         binding.tvUser.text = user.name
     }
 
