@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.text.method.ScrollingMovementMethod
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.annotation.ColorInt
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -47,7 +48,8 @@ class DetailActivity : AppCompatActivity() {
         setTitle(detail.userId, detail.repo.name)
         setForkCard(detail.repo.forks)
         setStarCard(detail.repo.stargazersCount)
-        setUpdateAt(detail.repo.updatedAt)
+        setUpdatedAt(detail.repo.updatedAt)
+        setTotalFork(detail.totalForks, detail.getForkTextColor())
         setDescription(detail.repo.description)
     }
 
@@ -68,10 +70,18 @@ class DetailActivity : AppCompatActivity() {
         binding.cvStar.fadeIn()
     }
 
-    private fun setUpdateAt(updateAt: String) {
+    private fun setTotalFork(totalFork: Int, @ColorInt textColor: Int) {
+        binding.tvTotalForks.apply {
+            text = getString(R.string.text_total_forks, totalFork)
+            setTextColor(textColor)
+            fadeIn()
+        }
+    }
+
+    private fun setUpdatedAt(updateAt: String) {
         binding.tvUpdateAt.apply {
             text = getString(
-                R.string.text_update_at,
+                R.string.text_updated_at,
                 ZonedDateTime.parse(updateAt).format(dtFormatter)
             )
             fadeIn()

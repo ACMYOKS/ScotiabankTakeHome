@@ -6,5 +6,6 @@
     <string name="text_repo_title">%1$s/%2$s</string>
     <string name="text_fork">Fork</string>
     <string name="text_star">Star</string>
-    <string name="text_update_at">Update at: %1$s</string>
+    <string name="text_total_forks">Total forks: %1$d</string>
+    <string name="text_updated_at">Updated at: %1$s</string>
 </resources>

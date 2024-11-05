@@ -40,7 +40,8 @@ class DetailViewModelTest {
                 // null since there is no value for KeyRepoDetail
                 assertEquals(null, awaitItem())
 
-                val detail = RepoDisplayDetail("user1", Repo(1, "repo1", "repo1", null, "1", 0, 1))
+                val detail =
+                    RepoDisplayDetail("user1", Repo(1, "repo1", "repo1", null, "1", 0, 1), 10)
                 savedStateHandle[KeyRepoDetail] = detail
 
                 // emit detail set for KeyRepoDetail

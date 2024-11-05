@@ -1,7 +1,6 @@
 package com.acapp1412.scotiabanktakehome.screen.main
 
 import app.cash.turbine.test
-import app.cash.turbine.testIn
 import app.cash.turbine.turbineScope
 import com.acapp1412.scotiabanktakehome.GithubService
 import com.acapp1412.scotiabanktakehome.MainDispatcherRule
@@ -20,7 +19,6 @@ import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import okhttp3.ResponseBody.Companion.toResponseBody
 import okio.IOException
@@ -43,11 +41,14 @@ class MainPageViewModelTest {
     @MockK(relaxed = true)
     lateinit var mockGithubSvc: GithubService
 
+    @MockK(relaxed = true)
+    lateinit var getRepoDetailUseCase: GetRepoDetailUseCase
+
     @Test
     fun `when searchUser(userId) is called, then githubService getUser is called with the userId`() {
         coEvery { mockGithubSvc.getUser(any()) } returns mockk<Response<User>>()
 
-        val vm = MainPageViewModel(mockGithubSvc)
+        val vm = MainPageViewModel(mockGithubSvc, getRepoDetailUseCase)
         // searchUser is not called, GithubSvc.getUser should not be called
         coVerify(exactly = 0) { mockGithubSvc.getUser("user1") }
 
@@ -63,7 +64,7 @@ class MainPageViewModelTest {
     @Test
     fun `searchResultState returns Init and repos returns empty list initially`() = runTest {
         turbineScope {
-            val vm = MainPageViewModel(mockGithubSvc)
+            val vm = MainPageViewModel(mockGithubSvc, getRepoDetailUseCase)
             val state = vm.searchResultState.testIn(backgroundScope)
             val repos = vm.repos.testIn(backgroundScope)
             assertEquals(SearchResultState.Init, state.expectMostRecentItem())
@@ -80,7 +81,7 @@ class MainPageViewModelTest {
             val response2 = Response.success(200, user2)
             coEvery { mockGithubSvc.getUser("user1") } returns response1
             coEvery { mockGithubSvc.getUser("user2") } returns response2
-            val vm = MainPageViewModel(mockGithubSvc)
+            val vm = MainPageViewModel(mockGithubSvc, getRepoDetailUseCase)
 
             vm.searchResultState.test {
                 assertEquals(SearchResultState.Init, awaitItem())
@@ -100,7 +101,7 @@ class MainPageViewModelTest {
             val response2 = Response.error<User>(404, "no user found".toResponseBody())
             coEvery { mockGithubSvc.getUser("user1") } returns response1
             coEvery { mockGithubSvc.getUser("some user") } returns response2
-            val vm = MainPageViewModel(mockGithubSvc)
+            val vm = MainPageViewModel(mockGithubSvc, getRepoDetailUseCase)
 
             vm.searchResultState.test {
                 assertEquals(SearchResultState.Init, awaitItem())
@@ -124,7 +125,7 @@ class MainPageViewModelTest {
                     "no user found".toResponseBody()
                 )
                 coEvery { mockGithubSvc.getUser("errorUser") } throws IOException("network issue")
-                val vm = spyk(MainPageViewModel(mockGithubSvc))
+                val vm = spyk(MainPageViewModel(mockGithubSvc, getRepoDetailUseCase))
                 // bypass getRepo flow
                 justRun { vm.getRepos(any()) }
 
@@ -158,7 +159,7 @@ class MainPageViewModelTest {
             coEvery { mockGithubSvc.getUser("user1") } returns response1
             coEvery { mockGithubSvc.getUser("user2") } returns response2
             coEvery { mockGithubSvc.getUser("user3") } returns response3
-            val vm = spyk(MainPageViewModel(mockGithubSvc))
+            val vm = spyk(MainPageViewModel(mockGithubSvc, getRepoDetailUseCase))
             // getRepos is not called until getUser is called and successfully get a response
             verify(exactly = 0) { vm.getRepos("user1") }
             verify(exactly = 0) { vm.getRepos("user2") }
@@ -182,7 +183,7 @@ class MainPageViewModelTest {
             )
             coEvery { mockGithubSvc.getUserRepos("user1") } returns Response.success(list1)
             coEvery { mockGithubSvc.getUserRepos("user2") } returns Response.success(emptyList())
-            val vm = MainPageViewModel(mockGithubSvc)
+            val vm = MainPageViewModel(mockGithubSvc, getRepoDetailUseCase)
 
             vm.repos.test {
                 // initially it is empty
@@ -208,7 +209,7 @@ class MainPageViewModelTest {
                 404,
                 "no repo found".toResponseBody()
             )
-            val vm = MainPageViewModel(mockGithubSvc)
+            val vm = MainPageViewModel(mockGithubSvc, getRepoDetailUseCase)
 
             vm.repos.test {
                 // initially it is empty
@@ -227,7 +228,7 @@ class MainPageViewModelTest {
         runTest {
             turbineScope {
                 coEvery { mockGithubSvc.getUserRepos("user1") } throws IOException("network exception")
-                val vm = MainPageViewModel(mockGithubSvc)
+                val vm = MainPageViewModel(mockGithubSvc, getRepoDetailUseCase)
 
                 val repos = vm.repos.testIn(backgroundScope)
                 val error = vm.error.testIn(backgroundScope)
@@ -242,37 +243,23 @@ class MainPageViewModelTest {
             }
         }
 
-//    @Test
-//    fun `when showRepo is called, searchResultState is UserFound and repoId exists in repos, navToDetailEvent emits new value with correct detail`() =
-//        runTest {
-//            val vm = spyk(MainPageViewModel(mockGithubSvc))
-//            val resultState = MutableStateFlow<SearchResultState>(SearchResultState.Init)
-//            val repos = MutableStateFlow<List<Repo>>(emptyList())
-//            every { vm.searchResultState } returns resultState
-//            every { vm.repos } returns repos
-//
-//            vm.navToDetailEvent.test {
-//                expectNoEvents()
-//
-//                // incorrect result state and empty repos, no nav event
-//                vm.showRepo(1)
-//                expectNoEvents()
-//
-//                resultState.value = SearchResultState.UserFound(User(1, "user1", "url1", 1))
-//                repos.value = listOf(Repo(1, "repo1", "repo1", null, "ts1", 10, 100))
-//
-//                // repoId not match, no nav event
-//                vm.showRepo(2)
-//                expectNoEvents()
-//
-//                // matched, emit nav event
-//                vm.showRepo(1)
-//                assertEquals(
-//                    RepoDisplayDetail(
-//                        "user1",
-//                        Repo(1, "repo1", "repo1", null, "ts1", 10, 100)
-//                    ), expectMostRecentItem()
-//                )
-//            }
-//        }
+    @Test
+    fun `when showRepo is called, getRepoDetailUseCase getRepoDetail will be called, and navToDetailEvent emits new value with correct detail`() =
+        runTest {
+            val vm = spyk(MainPageViewModel(mockGithubSvc, getRepoDetailUseCase))
+            val repoDetail = RepoDisplayDetail(
+                "user1",
+                Repo(1, "repo1", "repo1", null, "ts1", 10, 100), 1000
+            )
+            every { getRepoDetailUseCase.getRepoDetail(1) } returns repoDetail
+
+            vm.navToDetailEvent.test {
+                expectNoEvents()
+                verify(exactly = 0) { getRepoDetailUseCase.getRepoDetail(1) }
+
+                vm.showRepo(1)
+                verify(exactly = 1) { getRepoDetailUseCase.getRepoDetail(1) }
+                assertEquals(repoDetail, awaitItem())
+            }
+        }
 }

@@ -21,7 +21,10 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-class MainPageViewModel(private val githubService: GithubService) : ViewModel() {
+class MainPageViewModel(
+    private val githubService: GithubService,
+    private val getRepoDetailUseCase: GetRepoDetailUseCase
+) : ViewModel() {
     private val _searchResultState = MutableStateFlow<SearchResultState>(SearchResultState.Init)
     val searchResultState = _searchResultState.asStateFlow()
 
@@ -41,8 +44,9 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
                 val response = githubService.getUser(userId)
                 when {
                     response.isSuccessful -> {
-                        _searchResultState.value = SearchResultState.UserFound(response.body()!!)
-                        getRepos(userId)
+                        val user = response.body()!!
+                        _searchResultState.value = SearchResultState.UserFound(user)
+                        getRepos(user.login)
                     }
 
                     response.code() == 404 -> {
@@ -69,11 +73,14 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
                 val response = githubService.getUserRepos(userId)
                 when {
                     response.isSuccessful -> {
-                        _repos.value = response.body()!!
+                        val repos = response.body()!!
+                        _repos.value = repos
+                        getRepoDetailUseCase.putUserWithRepos(userId, repos)
                     }
 
                     response.code() == 404 -> {
                         _repos.value = emptyList()
+                        getRepoDetailUseCase.putUserWithRepos(userId, emptyList())
                     }
 
                     else -> {
@@ -89,19 +96,8 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
     }
 
     fun showRepo(repoId: Long) {
-        when (val searchResultState = searchResultState.value) {
-            is SearchResultState.UserFound -> {
-                repos.value.firstOrNull { it.id == repoId }?.let {
-                    _navToDetailEvent.tryEmit(
-                        RepoDisplayDetail(
-                            searchResultState.user.login,
-                            it
-                        )
-                    )
-                }
-            }
-
-            else -> {}
+        getRepoDetailUseCase.getRepoDetail(repoId)?.let {
+            _navToDetailEvent.tryEmit(it)
         }
     }
 
@@ -115,7 +111,7 @@ class MainPageViewModel(private val githubService: GithubService) : ViewModel() 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val githubService = (this[APPLICATION_KEY] as BaseApplication).githubService
-                MainPageViewModel(githubService)
+                MainPageViewModel(githubService, GetRepoDetailUseCase())
             }
         }
     }
