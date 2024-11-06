@@ -7,7 +7,12 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 
-class DetailViewModel(private val savedStateHandle: SavedStateHandle) : ViewModel() {
+/**
+ * ViewModel for displaying repo details with detail being passed through SavedStateHandle
+ * */
+class DetailViewModel(
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
     val repoDetail = savedStateHandle.getStateFlow<RepoDisplayDetail?>(KeyRepoDetail, null)
 

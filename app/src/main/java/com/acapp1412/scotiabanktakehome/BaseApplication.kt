@@ -7,6 +7,10 @@ import coil3.SingletonImageLoader
 import coil3.request.crossfade
 import retrofit2.Retrofit
 
+/**
+ * Custom Application implementation to initialize instance of Retrofit, GithubService and
+ * ImageLoader
+ * */
 class BaseApplication : Application(), SingletonImageLoader.Factory {
     private lateinit var retrofit: Retrofit
     private lateinit var _githubService: GithubService

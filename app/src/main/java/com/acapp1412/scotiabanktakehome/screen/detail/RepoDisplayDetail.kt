@@ -12,7 +12,13 @@ data class RepoDisplayDetail(
     val repo: Repo,
     val totalForks: Int
 ) : Parcelable {
-    @ColorInt fun getForkTextColor(): Int = if (totalForks > 5000) {
+    /***
+     * function to determine which color should be used for the sum of forks of all repos.
+     * RED is the star badge color, which is used when the sum of forks of all repos exceeds 5000,
+     * otherwise GRAY is used
+     */
+    @ColorInt
+    fun getForkTextColor(): Int = if (totalForks > 5000) {
         Color.RED
     } else {
         Color.GRAY

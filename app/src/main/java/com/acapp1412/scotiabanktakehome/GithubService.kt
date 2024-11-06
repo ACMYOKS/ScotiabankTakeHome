@@ -11,6 +11,11 @@ interface GithubService {
     @GET("/users/{userId}")
     suspend fun getUser(@Path("userId") userId: String): Response<User>
 
+    /**
+     * note: this api supports paging and the max page size is 100. Since it is not possible to
+     * find the sum of forks of all repos with paging api, I did not implement paging and simply
+     * assumed all users do not contain more than 100 repos
+     * */
     @GET("/users/{userId}/repos")
     suspend fun getUserRepos(
         @Path("userId") userId: String,

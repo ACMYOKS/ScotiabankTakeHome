@@ -21,6 +21,10 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for the Main page, which depends on GithubService to call Github APIs, and
+ * GetRepoDetailUseCase to get the repository detail to display
+ * */
 class MainPageViewModel(
     private val githubService: GithubService,
     private val getRepoDetailUseCase: GetRepoDetailUseCase
@@ -38,65 +42,80 @@ class MainPageViewModel(
         MutableSharedFlow<RepoDisplayDetail>(0, 1, BufferOverflow.DROP_OLDEST)
     val navToDetailEvent = _navToDetailEvent.asSharedFlow()
 
+    /**
+     * function for UI to search user by userId, emits new SearchResultState, or error message when
+     * errors like network disconnection occurs.
+     * @param userId userId that the user inputs
+     */
     fun searchUser(userId: String) {
         viewModelScope.launch {
-            try {
-                val response = githubService.getUser(userId)
-                when {
-                    response.isSuccessful -> {
-                        val user = response.body()!!
-                        _searchResultState.value = SearchResultState.UserFound(user)
-                        getRepos(user.login)
-                    }
-
-                    response.code() == 404 -> {
-                        _searchResultState.value = SearchResultState.NoUserFound
-                        _error.tryEmit(Message.OfResource(R.string.error_msg_no_user_found))
-                        _repos.value = emptyList()
-                    }
-
-                    else -> {
-                        _error.tryEmit(Message.OfString(response.message()))
-                    }
+            val response = githubService.getUser(userId)
+            when {
+                // user found, emits new state with the user detail and fetches the user's repos
+                response.isSuccessful -> {
+                    val user = response.body()!!
+                    _searchResultState.value = SearchResultState.UserFound(user)
+                    getRepos(user.login)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _error.tryEmit(Message.OfString(e.message.orEmpty()))
+
+                // user not found, emits new state without user detail, clears the repo list
+                // and emits an error message
+                response.code() == 404 -> {
+                    _searchResultState.value = SearchResultState.NoUserFound
+                    _error.tryEmit(Message.OfResource(R.string.error_msg_no_user_found))
+                    _repos.value = emptyList()
+                }
+
+                // error occurs, emits error message
+                else -> {
+                    _error.tryEmit(Message.OfString(response.message()))
+                }
             }
         }
     }
 
+    /**
+     * function to obtain the user's repos, emits the repo list, or error message when errors like
+     * network disconnection occurs.
+     * @param userId
+     * */
     @VisibleForTesting
     fun getRepos(userId: String) {
         viewModelScope.launch {
-            try {
-                val response = githubService.getUserRepos(userId)
-                when {
-                    response.isSuccessful -> {
-                        val repos = response.body()!!
-                        _repos.value = repos
-                        getRepoDetailUseCase.putUserWithRepos(userId, repos)
-                    }
-
-                    response.code() == 404 -> {
-                        _repos.value = emptyList()
-                        getRepoDetailUseCase.putUserWithRepos(userId, emptyList())
-                    }
-
-                    else -> {
-                        _repos.value = emptyList()
-                        _error.tryEmit(Message.OfString(response.message()))
-                    }
+            val response = githubService.getUserRepos(userId)
+            when {
+                // repo list is not empty, emits list of repos
+                response.isSuccessful -> {
+                    val repos = response.body()!!
+                    _repos.value = repos
+                    // update useCase of the new userId-repos pair
+                    getRepoDetailUseCase.putUserWithRepos(userId, repos)
                 }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                _error.tryEmit(Message.OfString(e.message.orEmpty()))
+
+                // repo list is empty, emits empty repo list
+                response.code() == 404 -> {
+                    _repos.value = emptyList()
+                    // update useCase of the new userId-repos pair
+                    getRepoDetailUseCase.putUserWithRepos(userId, emptyList())
+                }
+
+                // error occurs, clears the list and emits error message
+                else -> {
+                    _repos.value = emptyList()
+                    _error.tryEmit(Message.OfString(response.message()))
+                }
             }
+
         }
     }
 
+    /**
+     * function to emit nav event to repo detail page if needed.
+     * @param repoId
+     * */
     fun showRepo(repoId: Long) {
         getRepoDetailUseCase.getRepoDetail(repoId)?.let {
+            // repo detail found for repoId, emits nav event
             _navToDetailEvent.tryEmit(it)
         }
     }
